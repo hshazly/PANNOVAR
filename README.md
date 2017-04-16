@@ -23,7 +23,9 @@ supported_databases.csv and not exist in the databases directory it won't annota
 
 # COMMAND:
 ./pannovar -i <vcf_file> <output_directory>
+
 vcf_file	Input VCF file
+
 output_directory	the output directory which will contain the output (the script will create it)
 
 # OUTPUT:
