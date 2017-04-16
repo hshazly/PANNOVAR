@@ -1,0 +1,28 @@
+Database,annotation_type,dbtype,downdb,dbtype_altered,genericdbfile,extra_args,type,description_of_annotation,source,columns or reference or standalone,builds,extraProcessingType
+dbSNP135,filter,snp132,snp132,,,,genomic info,rsnumber,annovar,c,hg19,
+CytoBand,regionanno,cytoband,cytoband,,,,genomic info,cytoband,ucsc,c,hg19,
+Target_Scan,regionanno,targetScanS,targetScanS,,,,miRNA,score from 1-1000,ucsc,c,hg19,NameScore
+mirBase,regionanno,wgRna,wgRna,,,,miRNA,name of miRNA,ucsc,c,hg19,Name
+Self_Chain,regionanno,chainSelf,chainSelf,T,,\--scorecolumn 5,genomic info,alignment of genome against itself,ucsc,C,hg19,NameScore
+Repeat_Masker,regionanno,rmsk,rmsk,T,,\--scorecolumn 5,genomic info,,ucsc,c,hg19,NameScore
+TFBS,regionanno,tfbs,tfbs,,,,genomic info,"score from 1-1000, higher more likely a tfbs",ucsc,c,hg19,NameScore
+Segmental_Duplications,regionanno,segdup,segdup,,,,genomic info,"the name of the matching segment, and the identity with that segment",ucsc,c,hg19,NameScore
+SIFT,filter,ljb_sift,ljb_sift,,,\-otherinfo,prediction of deleteriousness,score and prediction,annovar,c,hg19,DBNSFP
+PolyPhen2,filter,ljb_pp2,ljb_pp2,,,\-otherinfo,prediction of deleteriousness,score and prediction,annovar,c,hg19,DBNSFP
+Mutation_Taster,filter,ljb_mt,ljb_mt,,,\-otherinfo,prediction of deleteriousness,score and prediction,annovar,c,hg19,DBNSFP
+GERP,filter,ljb_gerp++,ljb_gerp++,,,\-otherinfo,conservation measure,score and prediction,annovar,c,hg19,DBNSFP
+PhyloP,filter,ljb_phylop,ljb_phylop,,,\-otherinfo,conservation measure,score and prediction,annovar,c,hg19,DBNSFP
+LRT,filter,ljb_lrt,ljb_lrt,,,\-otherinfo,conservation measure,score and prediction,annovar,c,hg19,DBNSFP
+Mce46way,regionanno,mce46way,mce46way,,,,conservation measure,score and prediction,ucsc,c,hg19,NameLod
+Complete_Genomics_69,filter,cg69,cg69,,,,allele frequencies,allele frequency,annovar,c,hg19,
+The_1000g_April_all,filter,1000g2012apr_all,1000g2012apr,,,,allele frequencies,allele frequency,annovar,c,hg19,
+NHLBI_Exome_Project_euro,filter,generic,esp6500_ea,,esp6500_ea,,allele frequencies,allele frequency,annovar,c,hg19,
+NHLBI_Exome_Project_aa,filter,generic,esp6500_aa,,esp6500_aa,,allele frequencies,allele frequency,annovar,c,hg19,
+NHLBI_Exome_Project_all,filter,generic,esp6500_all,,esp6500_all,,allele frequencies,allele frequency,annovar,c,hg19,
+ENCODE_DNaseI_Hypersensitivity,regionanno,wgEncodeRegDnaseClustered,wgEncodeRegDnaseClustered,,,\--scorecolumn 5,genomic info,Digital DNaseI Hypersensitivity Clusters from ENCODE,ucsc,c,hg19,NameScore
+ENCODE_Transcription_Factor,regionanno,wgEncodeRegTfbsClustered,wgEncodeRegTfbsClustered,,,\--scorecolumn 5,genomic info,Transcription Factor ChIP-seq from ENCODE,ucsc,c,hg19,NameScore
+UCSC_Gene,geneanno,knownGene,knownGene,,,\--hgvs,gene and transcript predictions,"includes gene, transcript, coding change, protein change, type of variant",ucsc,c,hg19,
+Refseq_Gene,geneanno,refGene,refGene,,,\--hgvs,gene and transcript predictions,"includes gene, transcript, coding change, protein change, type of variant",ucsc,c,hg19,
+Ensembl_Gene,geneanno,ensGene,ensGene,,,\--hgvs,gene and transcript predictions,"includes gene, transcript, coding change, protein change, type of variant",ucsc,c,hg19,
+CCDS_Gene,geneanno,ccdsGene,ccdsGene,T,,\--hgvs,gene and transcript predictions,"includes gene, transcript, coding change, protein change, type of variant",ucsc,c,hg19,
+

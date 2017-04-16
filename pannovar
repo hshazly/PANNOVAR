@@ -1,0 +1,184 @@
+#!/usr/bin/python
+
+import sys, optparse, os, tempfile, subprocess, shutil, config
+#sys.path.append(config.scriptsPath)
+from PBS import runAsPBSJob,checkPBSstatus, getStdoutStderr, getNumberOfCores
+import utils, time, re, logging
+import annovar_onet
+
+"""
+=>How to use?
+=>Insert databases and annovar path in config.ini file.
+=>./pannovar -i <input_vcf> <output_directory>
+"""
+
+
+def cleanup_before_exit( tmp_dir ):
+    if tmp_dir and os.path.exists( tmp_dir ):
+        shutil.rmtree( tmp_dir )
+
+def firejob( cmd ):
+    id = utils.GetRandomString()
+    #cmd = commandInstance[1] + commandInstance[0] + commandInstance[2]
+    #print cmd
+    pbsID = runAsPBSJob("pannovar",id,cmd)
+    return (pbsID, id)
+
+
+def log(out_dir, tmp_dir, db_id):
+    filehandler = open(os.path.join(out_dir, 'annotation.log'), 'w+')
+    #print out_dir
+    for db, id in db_id.items():
+        search_cmd = 'grep -i %s %s' % ('\'Error\'', os.path.join(tmp_dir, 'pannovar.%s.e*' % (str(id)) ) )
+        #print search_cmd
+        proc = subprocess.Popen( args=search_cmd, shell=True, stdout=subprocess.PIPE)
+        (out, err) = proc.communicate()
+        if out == "":
+           filehandler.write('%s:\n%s\n' % (db, 'annotation successful.'))
+        else:
+           filehandler.write('%s:\n%s\n' % (db, out))
+    
+    filehandler.close()       
+
+def format_output(original_vcf, out_annotated):
+    #logging.info('INFO: Generating CSV file')
+    #print 'INFO: Generating CSV file'
+
+    cut_qual_cols_cmd = 'egrep -v \"^##\" %s | cut -f6,8,9,10 - > req_cols' % (original_vcf)
+    proc = subprocess.Popen( args=cut_qual_cols_cmd, shell=True, stdout=subprocess.PIPE )
+    (out, err) = proc.communicate()  
+  
+    #print cut_qual_cols_cmd
+
+    req_anno_cols_cmd = "awk \'{ print $1 \"\t\" $5 \"\t\" $6 \"\t\" $2 \"\t\" $7 \"\t\" $8 \"\t\" $10 \"\t\" $49 \"\t\" $50 \"\t\" $51 \"\t\" $52 \"\t\" $9 \"\t\" $37 \"\t\" $35 \"\t\" $42 \"\t\" $43 \"\t\" $44 \"\t\" $45 \"\t\" $46 \"\t\" $47 \"\t\" $48 \"\t\" $22 \"\t\" $23 \"\t\" $24 \"\t\" $25 \"\t\" $26 \"\t\" $27 \"\t\" $28 \"\t\" $29 \"\t\" $30 \"\t\" $31 \"\t\" $32}' %s > rearranged_annotated" % (out_annotated)
+    proc = subprocess.Popen( args=req_anno_cols_cmd, shell=True, stdout=subprocess.PIPE )
+    (out, err) = proc.communicate()
+    
+    #print req_anno_cols_cmd
+
+    #merge 2 column files
+    merge_cols_cmd = 'paste rearranged_annotated req_cols > out_annotated'
+    proc = subprocess.Popen( args=merge_cols_cmd, shell=True, stdout=subprocess.PIPE )
+    (out, err) = proc.communicate()
+
+    #print merge_cols_cmd
+
+    generate_csv_cmd = 'less out_annotated | tr -s \'\t\' \'\t\'  | tr \',\' \';\' | tr \'\t\' \',\' > out/annotation_report.csv'
+    proc = subprocess.Popen( args=generate_csv_cmd, shell=True, stdout=subprocess.PIPE )
+    (out, err) = proc.communicate()
+
+
+def start_engine(in_vcf, tmp_dir, logger):
+  
+    logger.info('Populating annotation databases..')
+ 
+    dbs_info = annovar_onet.read_dbs()
+    dbs = dbs_info.keys()
+              
+    ids = []
+    db_id = {}
+
+    logger.info('Firing the jobs..')
+
+    for db in dbs:
+        id_tuple = firejob( annovar_onet.annotate(db, in_vcf, tmp_dir) )
+        ids.append( [id_tuple[0], 'R'] )
+        db_id[db] = id_tuple[1]
+
+    running_jobs = len(ids)
+
+    while running_jobs > 0:
+         for pbsID in ids:
+             if pbsID[1] == 'C' or pbsID[1] == 'E':
+                continue
+             status = checkPBSstatus(pbsID[0])
+             if status == 'C' or status == 'E':
+                pbsID[1] = status
+                running_jobs -= 1
+
+    #raise Exception(ids)
+    os.system('mkdir out')
+    out_annotation = os.path.join(tmp_dir, 'out')
+    
+    for db in dbs:
+       output_files = [os.path.join(os.path.join(tmp_dir, db), file) for file in os.listdir(os.path.join(tmp_dir, db)) if file != 'annotated.log']
+       annotation_type = dbs_info[db]['annotation_type']
+       annovar_onet.processAnnovar(output_files, annotation_type, db)
+
+    logger.info('Merging annotation files..')
+
+    annovar_onet.merge(in_vcf, out_annotation, "/ ".join(dbs)+'/')
+    
+    return (out_annotation, db_id)
+
+
+def fetch_output(out_annotation, output_path):
+    #print (out_annotation, os.path.dirname(output_path))
+    cmd = 'cp -r %s %s' % (out_annotation, output_path)
+    #print cmd	
+    os.system( cmd )
+
+
+
+def __main__():
+    start = time.time()
+
+    #logging.basicConfig(level=logging.INFO)
+    #logger = logging.getLogger("logger")
+
+    formatter = "%(levelname)s: %(asctime)s %(message)s"
+
+    logging.basicConfig(format=formatter, level=logging.INFO)
+    #logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger("logger")
+
+    #ch = logging.StreamHandler()
+    #ch.setLevel(logging.INFO)
+    #ch.setFormatter(formatter)
+
+    #logger.addHandler(ch)
+    logger.info('Starting the engine..')
+
+    #Parse Command line
+    parser = optparse.OptionParser()
+    parser.add_option( '-i', dest='in_vcf', action='store', type="string", help='Input VCF file.' )
+    parser.add_option( '-o', dest='out_annotated', action='store', type='string', help='Output annotated file.' )
+    
+    (options, args) = parser.parse_args()
+    
+    input_vcf = os.path.abspath(options.in_vcf)
+    output_path = os.path.abspath(options.out_annotated)
+
+    #abs_path = os.path.dirname(input_vcf)
+    tmp_dir = tempfile.mkdtemp( prefix='tmp-annovar-' )
+    #tmp_dir = os.path.abspath('tmp')
+    #os.system('mkdir tmp')
+    os.system('cp annovar_onet.py %s' % (tmp_dir))
+    os.system('cp merger.R %s' % (tmp_dir))
+    os.system('cp config.ini %s' % (tmp_dir))
+    os.system('cp supported_databases.csv %s' % (tmp_dir))
+    os.system('cp helper_script.awk %s' % (tmp_dir))
+    os.chdir(tmp_dir)
+
+    #cleanup_before_exit( tmp_dir )
+    #raise Exception()
+    out_annotation, db_id = start_engine(input_vcf, tmp_dir, logger)
+
+  
+    logger.info('Creating CSV file..')  
+    format_output(input_vcf, os.path.join(tmp_dir, 'out/annotation_table.txt'))
+    fetch_output(out_annotation, output_path)
+    log(output_path, tmp_dir, db_id)  
+    
+    #raise Exception(tmp_dir)
+    cleanup_before_exit( tmp_dir )
+    logger.info('Done..')
+    
+    end = time.time()
+    logger.info('Elapsed time: %s' % (end - start) )
+    #raise Exception(db_id) 
+
+if __name__=="__main__": __main__()
+    
+
+
