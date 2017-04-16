@@ -26,6 +26,7 @@ supported_databases.csv and not exist in the databases directory it won't annota
 
 # OUTPUT:
 In the specified output directory you will have 3 files:
-1- annotation_table.txt: contains annotation results. 
-2- annotation_report.csv: annotation results in CSV format.
-3- annotated.log: a log file which contains all the database and whether it annotated successfully or there is an error.
+
+1. annotation_table.txt: contains annotation results. 
+2. annotation_report.csv: annotation results in CSV format.
+3. annotated.log: a log file which contains all the database and whether it annotated successfully or there is an error.
